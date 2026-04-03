@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract {{ contract.contract_id }} — C-by-B</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <a href="/"><img src="{{ url_for('static', filename='logo-medium.png') }}" alt="C-by-B logo"></a>
+            <div class="brand-text">
+                <h1><a href="/" style="color: inherit; text-decoration: none;">Constraint-by-Balance</a></h1>
+                <div class="tagline">Stability at the edge of emergence</div>
+            </div>
+        </div>
+        <div class="header-nav">
+            <span class="muted">Contract {{ contract.contract_id }}</span>
+        </div>
+    </header>
+
+    <main>
+        {# Final decision banner #}
+        <div class="decision-banner decision-{{ contract.final_decision|lower }}">
+            <h3>{{ contract.final_decision }}</h3>
+            <span>{{ contract.revision_count }} round(s) &middot; {{ contract.total_time_s }}s
+                &middot; {{ contract.evaluator_class }}</span>
+        </div>
+
+        {# Prompt #}
+        <details class="result-section" open>
+            <summary><strong>Prompt</strong></summary>
+            <p class="prompt-text">{{ contract.prompt }}</p>
+        </details>
+
+        {# Parsed request #}
+        {% if contract.request %}
+        <details class="result-section" open>
+            <summary><strong>Parsed Request</strong></summary>
+            <div class="request-body">
+                {% if contract.request.action %}
+                <p><strong>Action:</strong> {{ contract.request.action }}</p>
+                {% endif %}
+                {% if contract.request.context %}
+                <p><strong>Context:</strong> {{ contract.request.context }}</p>
+                {% endif %}
+                {% if contract.request.constraints %}
+                <p><strong>Constraints:</strong></p>
+                <ul>{% for c in contract.request.constraints %}<li>{{ c }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if contract.request.objectives %}
+                <p><strong>Objectives:</strong></p>
+                <ul>{% for o in contract.request.objectives %}<li>{{ o }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+        </details>
+        {% endif %}
+
+        {# Dialog rounds #}
+        {% for round in contract.dialog %}
+        {% set eval_resp = round.evaluator_response or {} %}
+        {% set proposal = round.proposed_action or {} %}
+        {% set evidence = round.evidence or {} %}
+        {% set timings = round.timings or {} %}
+        {% set round_dec = eval_resp.decision|default('')|lower %}
+
+        <div class="round-card round-{{ round_dec }}">
+            <div class="round-header">
+                <h3>Round {{ round.round_number }}</h3>
+                {% if eval_resp.decision %}
+                <span class="decision-badge badge-{{ round_dec }}">{{ eval_resp.decision }}</span>
+                {% endif %}
+            </div>
+
+            {# Cognitive Twin proposal #}
+            {% if proposal.action_summary %}
+            <details class="subsection" open>
+                <summary><strong>Cognitive Twin Proposal</strong></summary>
+                <div class="proposal-body">
+                    <p class="action-summary">{{ proposal.action_summary }}</p>
+
+                    {% if proposal.action_steps %}
+                    <details>
+                        <summary>Action Steps ({{ proposal.action_steps|length }})</summary>
+                        <table class="steps-table">
+                            <thead><tr><th>Step</th><th>Description</th><th>Dates</th></tr></thead>
+                            <tbody>
+                            {% for step in proposal.action_steps %}
+                            <tr>
+                                <td>{{ step.step|default('') }}</td>
+                                <td>{{ step.description|default('') }}</td>
+                                <td>{{ step.start_date|default('') }} &rarr; {{ step.end_date|default('') }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </details>
+                    {% endif %}
+
+                    {% if proposal.action_locations %}
+                    <details>
+                        <summary>Locations</summary>
+                        <ul>
+                        {% for name, loc in proposal.action_locations.items() %}
+                            <li><strong>{{ name }}:</strong> {{ loc }}</li>
+                        {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
+
+                    {% if proposal.governing_bodies %}
+                    <details>
+                        <summary>Governing Bodies ({{ proposal.governing_bodies|length }})</summary>
+                        <ul>
+                        {% for gb in proposal.governing_bodies %}
+                            <li>
+                            {% if gb is mapping %}
+                                <strong>{{ gb.name|default('') }}</strong>
+                                {% if gb.role %} ({{ gb.role }}){% endif %}
+                                {% if gb.engagement_description %} &mdash; {{ gb.engagement_description }}{% endif %}
+                            {% else %}
+                                {{ gb }}
+                            {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
+
+                    {% if proposal.consulted_stakeholders %}
+                    <details>
+                        <summary>Consulted Stakeholders ({{ proposal.consulted_stakeholders|length }})</summary>
+                        <ul>
+                        {% for s in proposal.consulted_stakeholders %}
+                            <li>
+                            {% if s is mapping %}
+                                <strong>{{ s.name|default('') }}</strong>
+                                {% if s.role %} ({{ s.role }}){% endif %}
+                                {% if s.engagement_description %} &mdash; {{ s.engagement_description }}{% endif %}
+                            {% else %}
+                                {{ s }}
+                            {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
+
+                    {% if proposal.constraint_assessment %}
+                    <details>
+                        <summary>Constraint Assessment</summary>
+                        <ul>
+                        {% for constraint, assessment in proposal.constraint_assessment.items() %}
+                            <li><strong>{{ constraint }}:</strong> {{ assessment }}</li>
+                        {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
+
+                    {% if proposal.rationale %}
+                    <details>
+                        <summary>Rationale</summary>
+                        <p>{{ proposal.rationale }}</p>
+                    </details>
+                    {% endif %}
+
+                    {% if proposal.revision_compliance %}
+                    <div class="revision-compliance">
+                        <h5>Revision Compliance</h5>
+                        <table class="compliance-table">
+                            <thead><tr>
+                                <th>Request</th><th>Field Modified</th><th>Changes</th><th>Safety Rationale</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for rc in proposal.revision_compliance %}
+                            <tr>
+                                <td>{{ rc.request|default('') }}</td>
+                                <td>{{ rc.field_modified|default('') }}</td>
+                                <td>{{ rc.specific_changes|default('') }}</td>
+                                <td>{{ rc.safety_rationale|default('') }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </details>
+            {% endif %}
+
+            {# Evidence summary #}
+            {% if evidence.evidence_triples %}
+            <details class="subsection">
+                <summary><strong>Evidence</strong> &mdash; {{ evidence.evidence_triples|length }} triples
+                    {% if evidence.metadata %}
+                    , {{ evidence.metadata.n_seeds|default(0) }} seeds
+                    , {{ evidence.metadata.n_expansion_rounds|default(0) }} expansion rounds
+                    {% endif %}
+                </summary>
+                {% if evidence.metadata and evidence.metadata.thresholds %}
+                <p class="evidence-meta">
+                    Thresholds: T={{ evidence.metadata.thresholds.T }}
+                    G={{ evidence.metadata.thresholds.G }}
+                    P={{ evidence.metadata.thresholds.P }}
+                </p>
+                {% endif %}
+                {% if evidence.source_docs %}
+                <p class="evidence-meta">Sources: {{ evidence.source_docs|join(', ') }}</p>
+                {% endif %}
+            </details>
+            {% endif %}
+
+            {# Evaluator response #}
+            {% if eval_resp.decision %}
+            <details class="subsection" open>
+                <summary><strong>Evaluator:</strong>
+                    <span class="decision-badge badge-{{ round_dec }}">{{ eval_resp.decision }}</span>
+                </summary>
+                <div class="evaluator-body">
+                    {% if eval_resp.rationale_for_decision %}
+                    <div class="rationale">
+                        <p>{{ eval_resp.rationale_for_decision }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if eval_resp.revision_requests %}
+                    <div class="revision-requests">
+                        <h5>Revision Requests</h5>
+                        <ul>
+                        {% for rr in eval_resp.revision_requests %}
+                            <li>
+                            {% if rr is mapping %}
+                                <strong>{{ rr.field|default('') }}:</strong> {{ rr.request|default('') }}
+                            {% else %}
+                                {{ rr }}
+                            {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if eval_resp.evidence_cited %}
+                    <p><strong>Evidence cited:</strong> {{ eval_resp.evidence_cited|join(', ') }}</p>
+                    {% endif %}
+
+                    {% if eval_resp.uncertainty %}
+                    <div class="confidence">
+                        <strong>Confidence:</strong>
+                        {{ (eval_resp.uncertainty.confidence * 100)|round(1) }}%
+                        {% if eval_resp.uncertainty.vote_distribution %}
+                        <span class="votes">
+                            (A:{{ eval_resp.uncertainty.vote_distribution.APPROVE|default(0) }}
+                             R:{{ eval_resp.uncertainty.vote_distribution.REVISE|default(0) }}
+                             V:{{ eval_resp.uncertainty.vote_distribution.VETO|default(0) }})
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if eval_resp.evidence_scores %}
+                    <details>
+                        <summary>Evidence Scores ({{ eval_resp.evidence_scores|length }} triples)</summary>
+                        <table class="scores-table">
+                            <thead><tr><th>Triple</th><th>Score</th></tr></thead>
+                            <tbody>
+                            {% for tid, score in eval_resp.evidence_scores|dictsort(by='value', reverse=true) %}
+                            <tr><td>{{ tid }}</td><td>{{ "%.3f"|format(score) }}</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </details>
+                    {% endif %}
+                </div>
+            </details>
+            {% endif %}
+
+            {# Timings #}
+            {% if timings %}
+            <div class="timings">
+                Cognitive: {{ timings.cognitive_s|default(0) }}s
+                &middot; Embedder: {{ timings.embedder_s|default(0) }}s
+                &middot; Evaluator: {{ timings.evaluator_s|default(0) }}s
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        {# Raw JSON #}
+        <details class="result-section">
+            <summary><strong>Raw Contract JSON</strong></summary>
+            <pre>{{ contract | tojson(indent=2) }}</pre>
+        </details>
+
+        <p><a href="/">New evaluation</a></p>
+    </main>
+</body>
+</html>

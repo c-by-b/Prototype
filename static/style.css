@@ -1,0 +1,617 @@
+/* ==========================================
+   C-by-B Safety Socket — Design System
+   Font: Recursive (variable)
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL@-15..0,300..800,0..1&display=swap');
+
+:root {
+  /* Brand Colors */
+  --primary:           #354F52;   /* Mycelial Moss    — headers, icons, structural lines */
+  --accent:            #A67C52;   /* Network Copper   — buttons, warm highlights */
+  --bg:                #E5E5E5;   /* Mist Gray        — main background */
+  --secondary:         #BFCBC2;   /* Sage Ash         — borders, panels, disabled states */
+  --text:              #2A2A2A;   /* Structure Charcoal — body text */
+
+  /* Derived */
+  --primary-light:     #4a6b6e;
+  --accent-light:      #c49a6c;
+  --surface:           #f2f2f0;   /* cards, elevated panels */
+
+  /* Decision palette */
+  --approve-bg:        #e8f0e8;
+  --approve-text:      #2d5a3d;
+  --approve-border:    #8cb89c;
+
+  --revise-bg:         #f5ead8;
+  --revise-text:       #7a5c34;
+  --revise-border:     #d4a96a;
+
+  --veto-bg:           #f0e0d6;
+  --veto-text:         #8b3a2a;
+  --veto-border:       #c4846e;
+
+  --escalate-bg:       #e0e8e8;
+  --escalate-text:     #354F52;
+  --escalate-border:   #7a9a9e;
+
+  /* Typography — Recursive variable axes */
+  --font:              'Recursive', monospace;
+  --casl-body:         0.25;      /* slightly organic */
+  --casl-display:      0.35;      /* more organic for headings */
+  --casl-mono:         0;         /* strict mono for code */
+}
+
+/* ---- Reset & Base ---- */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: var(--font);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 380;
+    font-size: 16px;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Header / Brand ---- */
+
+header {
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 1rem;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand img {
+    height: 56px;
+    width: auto;
+}
+
+.brand-text h1 {
+    font-variation-settings: 'CASL' var(--casl-display), 'wght' 600;
+    font-size: 1.6rem;
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.tagline {
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 340;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 0.15rem;
+}
+
+.header-nav {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.header-nav a {
+    color: var(--accent);
+    text-decoration: none;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 440;
+}
+.header-nav a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+}
+
+/* ---- Typography ---- */
+
+h1, h2, h3, h4 {
+    font-variation-settings: 'CASL' var(--casl-display);
+    color: var(--primary);
+    line-height: 1.25;
+}
+
+h2 { font-variation-settings: 'CASL' var(--casl-display), 'wght' 520; font-size: 1.3rem; }
+h3 { font-variation-settings: 'CASL' var(--casl-display), 'wght' 480; font-size: 1.1rem; }
+h4 { font-variation-settings: 'CASL' var(--casl-display), 'wght' 460; font-size: 1rem; }
+
+a { color: var(--primary); text-decoration-color: var(--secondary); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--accent); }
+
+small, .muted {
+    color: #6a6a68;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 340;
+}
+
+/* ---- Form ---- */
+
+form { margin-bottom: 2rem; }
+label {
+    display: block;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 520;
+    margin-bottom: 0.5rem;
+}
+
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--secondary);
+    border-radius: 6px;
+    font-family: var(--font);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 380;
+    font-size: 0.95rem;
+    resize: vertical;
+    background: var(--surface);
+}
+textarea:focus, select:focus {
+    outline: 2px solid var(--accent);
+    border-color: var(--accent);
+}
+
+select {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--secondary);
+    border-radius: 6px;
+    font-family: var(--font);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 380;
+    font-size: 0.9rem;
+    background: var(--surface);
+    margin-bottom: 1rem;
+}
+
+button {
+    margin-top: 0.75rem;
+    padding: 8px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-variation-settings: 'CASL' 0.2, 'wght' 460;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+button:hover { background: var(--primary); }
+button:disabled { background: var(--secondary); cursor: not-allowed; }
+
+/* ---- Mode toggle ---- */
+
+.mode-toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-label-text {
+    font-family: var(--font);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 400;
+    font-size: 0.85rem;
+    color: var(--secondary);
+    transition: color 0.2s;
+}
+.toggle-label-text.active {
+    color: var(--primary);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 600;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--secondary);
+    border-radius: 24px;
+    transition: background 0.3s;
+}
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--accent);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* ---- Progress log ---- */
+
+#progress-log {
+    background: #1a1f1a;
+    color: #d4d8d4;
+    padding: 1rem;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-variation-settings: 'CASL' var(--casl-mono), 'MONO' 1, 'wght' 400;
+    font-size: 0.85rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.log-entry { padding: 2px 0; }
+.log-time { color: #7a887a; }
+.log-decision { color: var(--approve-border); font-weight: 700; }
+.log-error { color: #c4846e; }
+.log-oom_error { color: #c4846e; font-weight: 700; }
+.log-evaluator_done { color: var(--accent-light); }
+.log-round_start { color: var(--primary-light); }
+.log-compliance_done { color: var(--primary-light); }
+.log-drift_detected { color: var(--accent); font-weight: 700; }
+.log-queue_wait { color: var(--accent-light); font-weight: 700; }
+
+.contract-json {
+    background: var(--bg-secondary, #f5f5f0);
+    border: 1px solid var(--border, #ddd);
+    border-radius: 4px;
+    padding: 1rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    max-height: 600px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.spinner {
+    margin: 1rem 0;
+    width: 24px; height: 24px;
+    border: 3px solid var(--secondary);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hidden { display: none; }
+
+/* ---- Decision banners ---- */
+
+.decision-banner {
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    margin: 1rem 0;
+}
+.decision-banner h3 {
+    font-variation-settings: 'CASL' var(--casl-display), 'wght' 600;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+.decision-banner span { font-size: 0.9rem; opacity: 0.8; }
+
+.decision-approve  { background: var(--approve-bg);  color: var(--approve-text);  border: 1px solid var(--approve-border); }
+.decision-revise   { background: var(--revise-bg);   color: var(--revise-text);   border: 1px solid var(--revise-border); }
+.decision-veto     { background: var(--veto-bg);     color: var(--veto-text);     border: 1px solid var(--veto-border); }
+.decision-escalate { background: var(--escalate-bg); color: var(--escalate-text); border: 1px solid var(--escalate-border); }
+
+/* ---- Decision badges (inline) ---- */
+
+.decision-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-variation-settings: 'CASL' 0, 'wght' 600;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+}
+.badge-approve  { background: var(--approve-bg);  color: var(--approve-text); }
+.badge-revise   { background: var(--revise-bg);   color: var(--revise-text); }
+.badge-veto     { background: var(--veto-bg);     color: var(--veto-text); }
+.badge-escalate { background: var(--escalate-bg); color: var(--escalate-text); }
+
+/* ---- Round cards ---- */
+
+.round-card {
+    margin: 1.5rem 0;
+    border: 1px solid var(--secondary);
+    border-left: 4px solid var(--secondary);
+    border-radius: 6px;
+    background: var(--surface);
+    padding: 1rem;
+}
+.round-card.round-approve  { border-left-color: var(--approve-border); }
+.round-card.round-revise   { border-left-color: var(--revise-border); }
+.round-card.round-veto     { border-left-color: var(--veto-border); }
+.round-card.round-escalate { border-left-color: var(--escalate-border); }
+
+.round-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.round-header h3 { color: var(--primary); }
+
+/* ---- Subsections within rounds ---- */
+
+.subsection {
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+    background: #fff;
+    border: 1px solid var(--secondary);
+    border-radius: 4px;
+}
+.subsection summary {
+    font-size: 0.95rem;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 480;
+    color: var(--primary);
+    cursor: pointer;
+}
+.subsection summary:hover { color: var(--accent); }
+.subsection[open] summary { margin-bottom: 0.5rem; }
+
+/* ---- Proposal body ---- */
+
+.proposal-body { font-size: 0.9rem; }
+.action-summary {
+    font-size: 0.95rem;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 460;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+/* ---- Tables ---- */
+
+.steps-table, .compliance-table, .scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+.steps-table th, .compliance-table th, .scores-table th {
+    background: var(--secondary);
+    color: var(--primary);
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--primary-light);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 520;
+}
+.steps-table td, .compliance-table td, .scores-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--secondary);
+    vertical-align: top;
+}
+.steps-table tr:hover td, .compliance-table tr:hover td {
+    background: var(--approve-bg);
+}
+
+/* ---- Revision compliance ---- */
+
+.revision-compliance {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--revise-bg);
+    border: 1px solid var(--revise-border);
+    border-radius: 6px;
+}
+.revision-compliance h5 {
+    color: var(--revise-text);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* ---- Compliance summary (enriched action + revision tracking) ---- */
+
+.compliance-label {
+    font-size: 0.8rem;
+    color: #8a8a88;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 400;
+}
+.enriched-summary {
+    padding: 0.5rem 0.75rem;
+    background: var(--escalate-bg);
+    border-left: 3px solid var(--escalate-border);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+.revision-tracking-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.revision-tracking-table th {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--secondary);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 520;
+}
+.revision-tracking-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--secondary);
+    vertical-align: top;
+}
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 520;
+    white-space: nowrap;
+}
+.status-fully {
+    background: var(--approve-bg);
+    color: var(--approve-text);
+    border: 1px solid var(--approve-border);
+}
+.status-partial {
+    background: var(--revise-bg);
+    color: var(--revise-text);
+    border: 1px solid var(--revise-border);
+}
+.status-not-addressed {
+    background: var(--veto-bg);
+    color: var(--veto-text);
+    border: 1px solid var(--veto-border);
+}
+
+/* ---- Revision requests ---- */
+
+.revision-requests {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--revise-bg);
+    border-radius: 4px;
+}
+.revision-requests h5 {
+    color: var(--revise-text);
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+.revision-requests ul { padding-left: 1.25rem; }
+.revision-requests li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+/* ---- Evaluator body ---- */
+
+.evaluator-body { font-size: 0.9rem; }
+.rationale {
+    padding: 0.5rem;
+    background: var(--approve-bg);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+.confidence { margin-top: 0.5rem; }
+.votes { color: #6a6a68; font-size: 0.85rem; }
+
+/* ---- Evidence meta ---- */
+
+.evidence-meta { font-size: 0.85rem; color: #6a6a68; margin: 0.25rem 0; }
+
+/* ---- Timings ---- */
+
+.timings {
+    font-size: 0.8rem;
+    color: #8a8a88;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--secondary);
+}
+
+/* ---- Result sections ---- */
+
+.result-section {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--secondary);
+    border-radius: 6px;
+}
+.result-section h4 { margin-bottom: 0.5rem; }
+.result-section pre {
+    background: #1a1f1a;
+    color: #d4d8d4;
+    padding: 0.75rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: var(--font);
+    font-variation-settings: 'CASL' var(--casl-mono), 'MONO' 1, 'wght' 400;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+.result-section ul { padding-left: 1.5rem; }
+
+.request-body { font-size: 0.9rem; }
+.request-body p { margin-bottom: 0.5rem; }
+.request-body ul { margin-bottom: 0.5rem; }
+
+.prompt-text { white-space: pre-wrap; font-style: italic; color: #5a5a58; }
+
+/* ---- Contract detail page ---- */
+
+.contract-meta {
+    background: var(--escalate-bg);
+    border: 1px solid var(--escalate-border);
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+details summary {
+    cursor: pointer;
+    color: var(--primary);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 520;
+}
+details summary:hover { color: var(--accent); }
+details[open] > summary { margin-bottom: 0.5rem; }
+
+section { margin: 1.5rem 0; }
+section h2 { margin-bottom: 0.75rem; }
+
+/* ---- About modal ---- */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 42, 42, 0.6);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+    background: var(--surface);
+    border: 1px solid var(--secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    max-width: 560px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(53, 79, 82, 0.25);
+}
+.modal h2 {
+    margin-bottom: 1rem;
+    font-variation-settings: 'CASL' var(--casl-display), 'wght' 560;
+}
+.modal p {
+    margin-bottom: 0.75rem;
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+.modal .btn {
+    margin-top: 1rem;
+}
+
+/* ---- GPU queue indicator ---- */
+
+.queue-wait {
+    color: var(--accent);
+    font-variation-settings: 'CASL' var(--casl-body), 'wght' 480;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

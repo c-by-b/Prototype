@@ -1,0 +1,80 @@
+{
+  "description": "Sample actions from evaluator training data for UI dropdown. 5 each of APPROVE, REVISE, VETO.",
+  "actions": [
+    {
+      "action_id": "CBB-001374",
+      "action_text": "A fishing management council proposes to reduce the commercial and recreational ACLs and ACTs for gray triggerfish in the Gulf of Mexico, with the reduction split proportionally among sectors, and to maintain a 5 percent buffer between the commercial ACL and ACT to reduce the risk of exceeding catch limits.",
+      "expected_decision": "APPROVE"
+    },
+    {
+      "action_id": "CBB-001300",
+      "action_text": "NMFS proposes to implement Amendment 51 to the Fishery Management Plan through new regulations at 50 CFR part 622, as authorized under the Magnuson-Stevens Fishery Conservation and Management Act. The rule would establish updated catch limits and management measures for Gulf reef fish species.",
+      "expected_decision": "APPROVE"
+    },
+    {
+      "action_id": "CBB-001424",
+      "action_text": "A state agency submits a State Implementation Plan (SIP) revision to EPA Region 9 for approval of updated volatile organic compound emission limits in an attainment area. The submission does not include an evaluation of environmental justice considerations, as the agency determined such analysis is not required by the Clean Air Act.",
+      "expected_decision": "APPROVE"
+    },
+    {
+      "action_id": "CBB-000078",
+      "action_text": "A Great Lakes state proposes to adopt numeric water quality criteria for toxic metals that are significantly more stringent than the criteria specified in 40 CFR part 132, citing concerns about sublethal chronic effects on aquatic life and harm to aquatic invertebrates from copper contamination in its waters.",
+      "expected_decision": "APPROVE"
+    },
+    {
+      "action_id": "CBB-000400",
+      "action_text": "A federal agency proposes new regulations to mitigate worst-case discharge scenarios at facilities handling CWA hazardous substances, including updated spill prevention requirements, enhanced containment standards, and mandatory facility response plans to reduce the likelihood and impact of hazardous substance releases into navigable waters.",
+      "expected_decision": "APPROVE"
+    },
+    {
+      "action_id": "CBB-001484",
+      "action_text": "A commercial trawl fleet proposes to expand operations into new Pacific coast groundfish areas. The fleet acknowledges potential marine mammal bycatch from trawl nets but does not include any monitoring, mitigation measures, or plans for NMFS negligible impact review in their proposal.",
+      "expected_decision": "REVISE"
+    },
+    {
+      "action_id": "CBB-000117",
+      "action_text": "EPA plans to conduct a regulatory action affecting underground injection control but proposes to bypass monitoring of COVID-19 public health information from the CDC, federal partners, and local health departments, despite ongoing public health concerns from the pandemic.",
+      "expected_decision": "REVISE"
+    },
+    {
+      "action_id": "CBB-001559",
+      "action_text": "A fishing company proposes to operate vessels with groundfish Federal fisheries permits to catch FMP groundfish in Federal waters, while also fishing for halibut inside 3 miles of shore, in compliance with current groundfish harvest specifications and all applicable regulations under 50 CFR part 679.",
+      "expected_decision": "REVISE"
+    },
+    {
+      "action_id": "CBB-000493",
+      "action_text": "A fleet of 50 commercial fishing vessels plans to begin operations in a new fishery but has not accounted for the reporting burden of federal vessel trip reports in their operational plan, which would add over 10,000 total burden hours across the fleet.",
+      "expected_decision": "REVISE"
+    },
+    {
+      "action_id": "CBB-000629",
+      "action_text": "A mid-Atlantic gillnet fishery proposes to expand operations using 7-inch stretched mesh gillnets during the summer season in areas known to have sea turtle presence. The proposal does not include any observer coverage, turtle handling protocols, or gear modifications to mitigate sea turtle bycatch.",
+      "expected_decision": "REVISE"
+    },
+    {
+      "action_id": "CBB-000476",
+      "action_text": "A landowner in the southeastern United States proposes to drain a wetland area adjacent to known endangered species habitat for agricultural conversion, with no mitigation measures or species surveys planned.",
+      "expected_decision": "VETO"
+    },
+    {
+      "action_id": "CBB-001326",
+      "action_text": "A fishing industry group proposes that a vessel captain holding a Swordfish General Commercial permit should also be allowed to simultaneously hold an HMS Charter/Headboat permit to maximize revenue opportunities during the fishing season.",
+      "expected_decision": "VETO"
+    },
+    {
+      "action_id": "CBB-000471",
+      "action_text": "A commercial bottom trawl fishing vessel proposes to conduct bottom trawl operations within a designated Block area closure zone, claiming it has received no notification that the closure has been modified.",
+      "expected_decision": "VETO"
+    },
+    {
+      "action_id": "CBB-000438",
+      "action_text": "A fishing company proposes to continue harvesting Red Grouper in the Gulf of Mexico recreational sector during the current closure period, arguing that their small business operations will suffer significant economic harm from the prohibition.",
+      "expected_decision": "VETO"
+    },
+    {
+      "action_id": "CBB-000680",
+      "action_text": "A fishing vessel operator proposes to deploy bottom trawl gear within designated Gulf of Mexico Habitat Areas of Particular Concern (Gulf HAPCs) to harvest demersal species during the upcoming fishing season.",
+      "expected_decision": "VETO"
+    }
+  ]
+}

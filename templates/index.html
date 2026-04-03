@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C-by-B Safety Socket</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <img src="{{ url_for('static', filename='logo-medium.png') }}" alt="C-by-B logo">
+            <div class="brand-text">
+                <h1>Constraint-by-Balance</h1>
+                <div class="tagline">Stability at the edge of emergence</div>
+            </div>
+        </div>
+        <div class="header-nav">
+            <a href="#" id="about-link">About This Prototype</a>
+        </div>
+    </header>
+
+    <main>
+        <form id="eval-form" action="/evaluate" method="POST">
+            <label for="sample-select">Choose a sample action or write your own:</label>
+            <select id="sample-select">
+                <option value="">-- Write your own --</option>
+            </select>
+
+            <div class="mode-toggle-row">
+                <label for="prompt">Proposed action:</label>
+                <div class="mode-toggle">
+                    <span class="toggle-label-text" id="mode-label-basic">Basic</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="mode-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label-text" id="mode-label-expanded">Expanded</span>
+                </div>
+            </div>
+            <input type="hidden" id="mode-input" name="mode" value="basic">
+            <textarea id="prompt" name="prompt" rows="6"
+                placeholder="Select a sample above or type your own action proposal..."></textarea>
+            <button type="submit" id="submit-btn">Evaluate</button>
+        </form>
+
+        <section id="progress" class="hidden">
+            <h2>Processing</h2>
+            <div id="progress-log"></div>
+            <div id="spinner" class="spinner hidden"></div>
+        </section>
+
+        <section id="result" class="hidden">
+            <div id="result-content"></div>
+        </section>
+    </main>
+
+    <!-- About modal -->
+    <div class="modal-overlay" id="about-modal">
+        <div class="modal">
+            <h2>About This Prototype</h2>
+            <p>The Safety Socket evaluates proposed actions against a corpus of regulatory knowledge encoded as subject-predicate-object triples.</p>
+            <p><strong>Evidence retrieval:</strong> The action is embedded and matched against regulatory triples through a T/G/P cosine similarity expansion loop. Evidence heads rank triples by relevance to action at layer 15 of a 4B 4-bit language model.</p>
+            <p><strong>Revision loop:</strong> A cognitive twin (here 32B dense LLM) revises the proposal using field-targeted feedback, and the evaluation repeats until convergence or round exhaustion (defaulted to 7).</p>
+            <h3>Evaluation Modes</h3>
+            <p><strong>Basic:</strong> The classification heads (100-seed ensemble at layer 19) make the decision requiring 90% agreement for Approval or Veto othewise it is Revise. A local 4B 4-bit model generates the rationale and revision requests. Fast, deterministic, anchored in trained decision geometry.</p>
+            <p><strong>Expanded:</strong> The classification heads provide an <em>advisory</em> signal. A judicial evaluator (generative model, again 4B 4-bit) analyzes the full structured contract, rotates focus across safety dimensions per round (domain risks, universal principles, pattern conflicts, systemic review), and makes the decision. Cannot approve before round 4. Probes the problem space through the cognitive twin before converging.</p>
+            <p><strong>Performance Note:</strong> The Evaluator runs on an Mac Mini M4 Pro with 64GB of memory. Response times vary by complexity of action as well as toggling Basic vs Expanded evaluatons. The Mini GPU is not capable of parallel processing and so your request may be queued.</p>
+            <button class="btn" id="about-close">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // About modal
+        const aboutLink = document.getElementById('about-link');
+        const aboutModal = document.getElementById('about-modal');
+        const aboutClose = document.getElementById('about-close');
+        aboutLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            aboutModal.classList.add('open');
+        });
+        aboutClose.addEventListener('click', function() {
+            aboutModal.classList.remove('open');
+        });
+        aboutModal.addEventListener('click', function(e) {
+            if (e.target === aboutModal) aboutModal.classList.remove('open');
+        });
+
+        // Mode toggle
+        const modeToggle = document.getElementById('mode-toggle');
+        const modeInput = document.getElementById('mode-input');
+        const modeLabelBasic = document.getElementById('mode-label-basic');
+        const modeLabelExpanded = document.getElementById('mode-label-expanded');
+        modeToggle.addEventListener('change', function() {
+            modeInput.value = this.checked ? 'expanded' : 'basic';
+            modeLabelBasic.classList.toggle('active', !this.checked);
+            modeLabelExpanded.classList.toggle('active', this.checked);
+        });
+        modeLabelBasic.classList.add('active');
+
+        const form = document.getElementById('eval-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const sampleSelect = document.getElementById('sample-select');
+        const promptArea = document.getElementById('prompt');
+        const progressSection = document.getElementById('progress');
+        const progressLog = document.getElementById('progress-log');
+        const spinner = document.getElementById('spinner');
+        const resultSection = document.getElementById('result');
+        const resultContent = document.getElementById('result-content');
+
+        // Load sample actions into dropdown
+        let sampleActions = [];
+        fetch('/static/sample_actions.json')
+            .then(r => r.json())
+            .then(data => {
+                sampleActions = data.actions;
+                data.actions.forEach(function(action, idx) {
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    const preview = action.action_text.substring(0, 80) + '...';
+                    opt.textContent = action.action_id + ' \u2014 ' + preview;
+                    sampleSelect.appendChild(opt);
+                });
+            });
+
+        sampleSelect.addEventListener('change', function() {
+            const idx = this.value;
+            if (idx === '') {
+                promptArea.value = '';
+                promptArea.focus();
+            } else {
+                promptArea.value = sampleActions[parseInt(idx)].action_text;
+            }
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+            progressLog.innerHTML = '';
+            resultSection.classList.add('hidden');
+            progressSection.classList.remove('hidden');
+            spinner.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('prompt', prompt);
+            formData.append('mode', modeInput.value);
+
+            fetch('/evaluate', { method: 'POST', body: formData })
+                .then(response => {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    let currentEventType = '';
+
+                    function read() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                spinner.classList.add('hidden');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Evaluate';
+                                return;
+                            }
+
+                            buffer += decoder.decode(value, { stream: true });
+
+                            // SSE messages are separated by blank lines (\n\n)
+                            // Process complete messages only
+                            let boundary = buffer.indexOf('\n\n');
+                            while (boundary !== -1) {
+                                const message = buffer.substring(0, boundary);
+                                buffer = buffer.substring(boundary + 2);
+
+                                // Parse the SSE message
+                                let evType = '';
+                                let evData = '';
+                                for (const line of message.split('\n')) {
+                                    if (line.startsWith('event: ')) {
+                                        evType = line.slice(7);
+                                    } else if (line.startsWith('data: ')) {
+                                        evData = line.slice(6);
+                                    }
+                                }
+                                if (evType && evData) {
+                                    handleEvent(evType, evData);
+                                }
+
+                                boundary = buffer.indexOf('\n\n');
+                            }
+
+                            read();
+                        });
+                    }
+                    read();
+                })
+                .catch(err => {
+                    addLogEntry('error', 'Connection error: ' + err.message);
+                    spinner.classList.add('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Evaluate';
+                });
+        });
+
+        function handleEvent(type, dataStr) {
+            try {
+                const data = JSON.parse(dataStr);
+                if (type === 'contract') {
+                    console.log('Contract received:', data);
+                    showResult(data);
+                    return;
+                }
+                if (type === 'queue_wait') {
+                    addLogEntry('queue_wait', data.message);
+                    submitBtn.textContent = 'Waiting for GPU...';
+                    return;
+                }
+                if (data.message) {
+                    addLogEntry(type, data.message);
+                }
+            } catch (e) {
+                console.error('SSE parse error for event ' + type + ':', e, dataStr.substring(0, 200));
+            }
+        }
+
+        function addLogEntry(type, message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry log-' + type;
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = '<span class="log-time">' + time + '</span> ' + esc(message);
+            progressLog.appendChild(entry);
+            progressLog.scrollTop = progressLog.scrollHeight;
+        }
+
+        // ---------------------------------------------------------------
+        // Full dialog rendering
+        // ---------------------------------------------------------------
+
+        function showResult(contract) {
+            resultSection.classList.remove('hidden');
+            let html = '';
+
+            // Final decision banner
+            const decision = contract.final_decision || 'UNKNOWN';
+            html += '<div class="decision-banner decision-' + decision.toLowerCase() + '">';
+            html += '<h3>' + decision + '</h3>';
+            html += '<span>' + (contract.revision_count || 0) + ' round(s) &middot; '
+                  + (contract.total_time_s || 0).toFixed(1) + 's</span>';
+            html += '</div>';
+
+            // Parsed request
+            if (contract.request) {
+                html += renderRequest(contract.request);
+            }
+
+            // Dialog rounds
+            const dialog = contract.dialog || [];
+            for (let i = 0; i < dialog.length; i++) {
+                html += renderRound(dialog[i], i === dialog.length - 1);
+            }
+
+            // Contract JSON toggle
+            if (contract.contract_id) {
+                html += '<details class="result-section">';
+                html += '<summary><strong>View Full Contract JSON</strong></summary>';
+                html += '<pre class="contract-json">' + esc(JSON.stringify(contract, null, 2)) + '</pre>';
+                html += '</details>';
+            }
+
+            resultContent.innerHTML = html;
+        }
+
+        function renderRequest(req) {
+            let html = '<details class="result-section" open>';
+            html += '<summary><strong>Parsed Request</strong></summary>';
+            html += '<div class="request-body">';
+            if (req.action) html += '<p><strong>Action:</strong> ' + esc(req.action) + '</p>';
+            if (req.context) html += '<p><strong>Context:</strong> ' + esc(req.context) + '</p>';
+            if (req.constraints && req.constraints.length) {
+                html += '<p><strong>Constraints:</strong></p><ul>';
+                req.constraints.forEach(c => html += '<li>' + esc(c) + '</li>');
+                html += '</ul>';
+            }
+            if (req.objectives && req.objectives.length) {
+                html += '<p><strong>Objectives:</strong></p><ul>';
+                req.objectives.forEach(o => html += '<li>' + esc(o) + '</li>');
+                html += '</ul>';
+            }
+            html += '</div></details>';
+            return html;
+        }
+
+        function renderRound(round, isLast) {
+            const evalResp = round.evaluator_response || {};
+            const proposal = round.proposed_action || {};
+            const evidence = round.evidence || {};
+            const timings = round.timings || {};
+            const roundDecision = evalResp.decision || '';
+            const decClass = roundDecision.toLowerCase();
+
+            let html = '<div class="round-card round-' + decClass + '">';
+
+            // Round header
+            html += '<div class="round-header">';
+            html += '<h3>Round ' + round.round_number + '</h3>';
+            if (roundDecision) {
+                html += '<span class="decision-badge badge-' + decClass + '">' + roundDecision + '</span>';
+            }
+            html += '</div>';
+
+            // Cognitive Twin proposal
+            html += renderProposal(proposal, round.round_number);
+
+            // Compliance summary (rounds 2+)
+            html += renderCompliance(round.compliance_summary, round.round_number);
+
+            // Evidence summary
+            html += renderEvidence(evidence);
+
+            // Evaluator response
+            html += renderEvaluator(evalResp);
+
+            // Timings
+            if (timings.cognitive_s || timings.embedder_s || timings.evaluator_s) {
+                html += '<div class="timings">';
+                html += 'Cognitive: ' + (timings.cognitive_s || 0) + 's';
+                if (timings.compliance_s) html += ' &middot; Compliance: ' + timings.compliance_s + 's';
+                html += ' &middot; Embedder: ' + (timings.embedder_s || 0) + 's';
+                html += ' &middot; Evaluator: ' + (timings.evaluator_s || 0) + 's';
+                html += '</div>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderProposal(proposal, roundNum) {
+            if (!proposal || (!proposal.action_summary && !proposal.action_steps)) return '';
+
+            let html = '<details class="subsection" open>';
+            html += '<summary><strong>Cognitive Twin Proposal</strong></summary>';
+            html += '<div class="proposal-body">';
+
+            if (proposal.action_summary) {
+                html += '<p class="action-summary">' + esc(proposal.action_summary) + '</p>';
+            }
+
+            // Action steps
+            if (proposal.action_steps && proposal.action_steps.length) {
+                html += '<details><summary>Action Steps (' + proposal.action_steps.length + ')</summary>';
+                html += '<table class="steps-table"><thead><tr><th>Step</th><th>Description</th><th>Dates</th></tr></thead><tbody>';
+                proposal.action_steps.forEach(function(step) {
+                    html += '<tr>';
+                    html += '<td>' + esc(step.step || '') + '</td>';
+                    html += '<td>' + esc(step.description || '') + '</td>';
+                    html += '<td>' + esc((step.start_date || '') + ' \u2192 ' + (step.end_date || '')) + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></details>';
+            }
+
+            // Locations
+            if (proposal.action_locations && Object.keys(proposal.action_locations).length) {
+                html += '<details><summary>Locations</summary><ul>';
+                for (const [name, loc] of Object.entries(proposal.action_locations)) {
+                    html += '<li><strong>' + esc(name) + ':</strong> ' + esc(loc) + '</li>';
+                }
+                html += '</ul></details>';
+            }
+
+            // Governing bodies
+            if (proposal.governing_bodies && proposal.governing_bodies.length) {
+                html += '<details><summary>Governing Bodies (' + proposal.governing_bodies.length + ')</summary><ul>';
+                proposal.governing_bodies.forEach(function(gb) {
+                    if (typeof gb === 'string') {
+                        html += '<li>' + esc(gb) + '</li>';
+                    } else {
+                        html += '<li><strong>' + esc(gb.name || '') + '</strong>';
+                        if (gb.role) html += ' (' + esc(gb.role) + ')';
+                        if (gb.engagement_description) html += ' — ' + esc(gb.engagement_description);
+                        html += '</li>';
+                    }
+                });
+                html += '</ul></details>';
+            }
+
+            // Stakeholders
+            if (proposal.consulted_stakeholders && proposal.consulted_stakeholders.length) {
+                html += '<details><summary>Consulted Stakeholders (' + proposal.consulted_stakeholders.length + ')</summary><ul>';
+                proposal.consulted_stakeholders.forEach(function(s) {
+                    if (typeof s === 'string') {
+                        html += '<li>' + esc(s) + '</li>';
+                    } else {
+                        html += '<li><strong>' + esc(s.name || '') + '</strong>';
+                        if (s.role) html += ' (' + esc(s.role) + ')';
+                        if (s.engagement_description) html += ' — ' + esc(s.engagement_description);
+                        html += '</li>';
+                    }
+                });
+                html += '</ul></details>';
+            }
+
+            // Constraint assessment
+            if (proposal.constraint_assessment && Object.keys(proposal.constraint_assessment).length) {
+                html += '<details><summary>Constraint Assessment</summary><ul>';
+                for (const [constraint, assessment] of Object.entries(proposal.constraint_assessment)) {
+                    html += '<li><strong>' + esc(constraint) + ':</strong> ' + esc(assessment) + '</li>';
+                }
+                html += '</ul></details>';
+            }
+
+            // Rationale
+            if (proposal.rationale) {
+                html += '<details><summary>Rationale</summary><p>' + esc(proposal.rationale) + '</p></details>';
+            }
+
+            // Revision compliance (rounds 2+)
+            if (proposal.revision_compliance && proposal.revision_compliance.length) {
+                html += '<div class="revision-compliance">';
+                html += '<h5>Revision Compliance</h5>';
+                html += '<table class="compliance-table"><thead><tr>';
+                html += '<th>Request</th><th>Field Modified</th><th>Changes</th><th>Safety Rationale</th>';
+                html += '</tr></thead><tbody>';
+                proposal.revision_compliance.forEach(function(rc) {
+                    html += '<tr>';
+                    html += '<td>' + esc(rc.request || '') + '</td>';
+                    html += '<td>' + esc(rc.field_modified || '') + '</td>';
+                    html += '<td>' + esc(rc.specific_changes || '') + '</td>';
+                    html += '<td>' + esc(rc.safety_rationale || '') + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+            }
+
+            html += '</div></details>';
+            return html;
+        }
+
+        function renderCompliance(compliance, roundNum) {
+            if (!compliance || roundNum <= 1) return '';
+
+            let html = '';
+
+            // Enriched action summary — the evolved proposal after compliance review
+            if (compliance.enriched_action_summary) {
+                html += '<details class="subsection" open>';
+                html += '<summary><strong>Enriched Action Summary</strong> <span class="compliance-label">(after compliance review)</span></summary>';
+                html += '<div class="enriched-summary">';
+                html += '<p>' + esc(compliance.enriched_action_summary) + '</p>';
+                html += '</div></details>';
+            }
+
+            // Revision tracking — how prior revision requests were addressed
+            const tracking = compliance.revision_tracking || [];
+            if (tracking.length) {
+                html += '<details class="subsection">';
+                html += '<summary><strong>Revision Tracking</strong> (' + tracking.length + ' items)</summary>';
+                html += '<table class="revision-tracking-table"><thead><tr>';
+                html += '<th>Prior Request</th><th>Status</th><th>Details</th>';
+                html += '</tr></thead><tbody>';
+                tracking.forEach(function(item) {
+                    const status = (item.status || '').toLowerCase();
+                    let statusClass = 'status-not-addressed';
+                    if (status.indexOf('fully') >= 0) statusClass = 'status-fully';
+                    else if (status.indexOf('partial') >= 0) statusClass = 'status-partial';
+                    html += '<tr>';
+                    html += '<td>' + esc(item.request || '') + '</td>';
+                    html += '<td><span class="status-badge ' + statusClass + '">' + esc(item.status || '') + '</span></td>';
+                    html += '<td>' + esc(item.details || '') + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></details>';
+            }
+
+            return html;
+        }
+
+        function renderEvidence(evidence) {
+            if (!evidence || !evidence.evidence_triples) return '';
+
+            const triples = evidence.evidence_triples || [];
+            const meta = evidence.metadata || {};
+
+            let html = '<details class="subsection">';
+            html += '<summary><strong>Evidence</strong> — ' + triples.length + ' triples';
+            if (meta.n_seeds) html += ', ' + meta.n_seeds + ' seeds';
+            if (meta.n_expansion_rounds) html += ', ' + meta.n_expansion_rounds + ' expansion rounds';
+            html += '</summary>';
+
+            if (meta.thresholds) {
+                html += '<p class="evidence-meta">Thresholds: T=' + (meta.thresholds.T || '')
+                      + ' G=' + (meta.thresholds.G || '') + ' P=' + (meta.thresholds.P || '') + '</p>';
+            }
+
+            if (evidence.source_docs && evidence.source_docs.length) {
+                html += '<p class="evidence-meta">Sources: ' + evidence.source_docs.join(', ') + '</p>';
+            }
+
+            html += '</details>';
+            return html;
+        }
+
+        function renderEvaluator(evalResp) {
+            if (!evalResp || !evalResp.decision) return '';
+
+            const dec = evalResp.decision;
+            const decClass = dec.toLowerCase();
+
+            let html = '<details class="subsection" open>';
+            html += '<summary><strong>Evaluator:</strong> ';
+            html += '<span class="decision-badge badge-' + decClass + '">' + dec + '</span>';
+            html += '</summary>';
+            html += '<div class="evaluator-body">';
+
+            // Rationale
+            if (evalResp.rationale_for_decision) {
+                html += '<div class="rationale">';
+                html += '<p>' + esc(evalResp.rationale_for_decision) + '</p>';
+                html += '</div>';
+            }
+
+            // Revision requests
+            if (evalResp.revision_requests && evalResp.revision_requests.length) {
+                html += '<div class="revision-requests">';
+                html += '<h5>Revision Requests</h5><ul>';
+                evalResp.revision_requests.forEach(function(rr) {
+                    if (typeof rr === 'string') {
+                        html += '<li>' + esc(rr) + '</li>';
+                    } else {
+                        html += '<li><strong>' + esc(rr.field || '') + ':</strong> ' + esc(rr.request || '') + '</li>';
+                    }
+                });
+                html += '</ul></div>';
+            }
+
+            // Evidence cited
+            if (evalResp.evidence_cited && evalResp.evidence_cited.length) {
+                html += '<p><strong>Evidence cited:</strong> ' + evalResp.evidence_cited.map(esc).join(', ') + '</p>';
+            }
+
+            // Confidence + vote distribution
+            const unc = evalResp.uncertainty || {};
+            if (unc.confidence !== undefined) {
+                html += '<div class="confidence">';
+                html += '<strong>Confidence:</strong> ' + (unc.confidence * 100).toFixed(1) + '%';
+                const votes = unc.vote_distribution || {};
+                if (Object.keys(votes).length) {
+                    html += ' <span class="votes">(A:' + (votes.APPROVE||0)
+                          + ' R:' + (votes.REVISE||0) + ' V:' + (votes.VETO||0) + ')</span>';
+                }
+                html += '</div>';
+            }
+
+            // Evidence scores (top 5)
+            if (evalResp.evidence_scores && Object.keys(evalResp.evidence_scores).length) {
+                const scores = Object.entries(evalResp.evidence_scores)
+                    .sort((a, b) => b[1] - a[1]);
+                html += '<details><summary>Evidence Scores (' + scores.length + ' triples)</summary>';
+                html += '<table class="scores-table"><thead><tr><th>Triple</th><th>Score</th></tr></thead><tbody>';
+                scores.forEach(function([tid, score]) {
+                    html += '<tr><td>' + esc(tid) + '</td><td>' + score.toFixed(3) + '</td></tr>';
+                });
+                html += '</tbody></table></details>';
+            }
+
+            html += '</div></details>';
+            return html;
+        }
+
+        function esc(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

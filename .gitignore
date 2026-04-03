@@ -1,0 +1,14 @@
+.env
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+results/*.json
+results/*.jsonl
+data
+llm
+logs/
+background_documents
+prior-code/
+prototype-build-sessions.zip
